@@ -30,9 +30,7 @@ async fn index() -> Result<String, NotFound<String>> {
 async fn get_sheet() -> Result<String, Box<dyn std::error::Error>> {
     let body = reqwest::get(URL).await?.text().await?;
 
-    println!("Body:\n{}", body);
     let mut calendar = ICalendar::new("2.0", "steinbock-kalender");
-
     calendar.add_timezone(TimeZone::standard("Europe/Vienna", Standard::new("19961027T030000", "+0100", "+0200")));
 
     let table = table_extract::Table::find_first(body.as_str()).unwrap();
@@ -48,23 +46,17 @@ async fn get_sheet() -> Result<String, Box<dyn std::error::Error>> {
         let section_name = sec.to_string();
 
         let dtstampdate = date.rsplit(".").map(|x| { x.to_string() }).collect::<Vec<String>>().join("");
-        let dtstamp = format!("{}T124640Z", dtstampdate);
-
-        println!("{}", dtstamp);
+        let dtstamp = format!("{}T124650Z", dtstampdate);
 
         let uid = format!("{}{}", dtstamp, section_name).split_whitespace().collect::<Vec<_>>().join("");
         let mut event = Event::new(uid, dtstamp);
 
         event.push(Property::new("SUMMARY", format!("Steinbock schraubt: {}", sec)));
-        event.push(Property::new("DTSTART;TZID=Europe/Vienna", format!("{}T090000", dtstampdate)));
-        event.push(Property::new("DTEND;TZID=Europe/Vienna", format!("{}T120000", dtstampdate)));
-        event.push(Property::new("X-GWSHOW-AS", "BUSY"));
+        event.push(Property::new("DTSTART;VALUE=DATE", dtstampdate.clone()));
+        event.push(Property::new("DTEND;VALUE=DATE", dtstampdate));
 
         calendar.add_event(event);
     }
-
-    // Write `calendar` to a file.
-    //calendar.save_file("steinbock.ics")?;
 
     Ok(calendar.to_string())
 }
