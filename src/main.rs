@@ -10,6 +10,7 @@ extern crate rocket;
 
 const URL: &str = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRM5GLi6AJKszq5NmdvB4CG1t4NngoJzLigvQ81Q3IKWbwONE2t4bRGdQfBgFVT_KsCPkElmyL_Kkbv/pubhtml/sheet?headers=true&gid=442327001";
 
+#[cfg(not(feature = "shuttle"))]
 #[launch]
 fn rocket() -> _ {
     let config = Config {
@@ -17,7 +18,18 @@ fn rocket() -> _ {
         port: 8000,
         ..Default::default()
     };
-    rocket::custom(config).mount("/", routes![index])
+    rocket::custom(config).mount("/", routes![index]).into()
+}
+
+#[cfg(feature = "shuttle")]
+#[shuttle_runtime::main]
+async fn rocket() -> shuttle_rocket::ShuttleRocket {
+    let config = Config {
+        address: "0.0.0.0".parse().unwrap(),
+        port: 8000,
+        ..Default::default()
+    };
+    Ok(rocket::custom(config).mount("/", routes![index]).into())
 }
 
 #[get("/")]
