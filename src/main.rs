@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use ics::components::Property;
 use ics::{Event, ICalendar, Standard, TimeZone};
+use rocket::http::ContentType;
 use rocket::response::status::NotFound;
 use rocket::Config;
 use table_extract::Row;
@@ -33,9 +34,15 @@ async fn rocket() -> shuttle_rocket::ShuttleRocket {
 }
 
 #[get("/")]
-async fn index() -> Result<String, NotFound<String>> {
+async fn index() -> (ContentType, Result<String, NotFound<String>>) {
     let ical = create_calendar().await;
-    return ical.map_err(|e| NotFound(format!("Error: {}", e.to_string())));
+    match ical {
+        Ok(v) => (ContentType::Calendar, Ok(v)),
+        Err(e) => (
+            ContentType::Text,
+            Err(NotFound(format!("Error: {}", e.to_string()))),
+        ),
+    }
 }
 
 async fn create_calendar() -> anyhow::Result<String> {
