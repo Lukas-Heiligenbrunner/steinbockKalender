@@ -38,10 +38,7 @@ async fn index() -> (ContentType, Result<String, NotFound<String>>) {
     let ical = create_calendar().await;
     match ical {
         Ok(v) => (ContentType::Calendar, Ok(v)),
-        Err(e) => (
-            ContentType::Text,
-            Err(NotFound(format!("Error: {}", e.to_string()))),
-        ),
+        Err(e) => (ContentType::Text, Err(NotFound(format!("Error: {}", e)))),
     }
 }
 
@@ -95,17 +92,9 @@ fn create_uid(section_name: String, timestamp: String) -> String {
 }
 
 fn decode_table(row: Row) -> anyhow::Result<(String, String)> {
-    let date = row
-        .iter()
-        .as_slice()
-        .get(0)
-        .ok_or(anyhow!("Date not in table"))?;
-    let sec = row
-        .iter()
-        .as_slice()
-        .get(1)
-        .ok_or(anyhow!("Section not in table"))?;
-    println!("{} at {} umgeschraubt", date, sec,);
+    let date = row.iter().next().ok_or(anyhow!("Date not in table"))?;
+    let sec = row.iter().nth(1).ok_or(anyhow!("Section not in table"))?;
+    info!("{} at {} umgeschraubt", date, sec);
 
     Ok((date.to_string(), sec.to_string()))
 }
